@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Library Mangement system</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="./css/check.css"> 
+  <script  src="./js/check.js"></script>
+  <script  src="./js/commons.js"></script>
+  <script type="text/javascript">
+    $(document).ready( function() {
+        popular_categories();
+        top_books();
+    });
+    function popular_categories() {
+        $.ajax({
+            url: '../server/index.php',
+            type: 'post',
+            data:{
+                purpose:"getPopularCategories"
+            },
+            success: function(result){
+                var data = jQuery.parseJSON(result);        
+                $.each( data, function( key, value ) {
+                    var url = "./subCategories.html?category="+value['id'];
+                    var div = "<div class='col-sm-6 col-md-3'  style='padding: initial;''>"+
+                                "<a href="+url+">"+
+                                    "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['image']+")''>"+
+                                        "<div class='categoryFeat-content'>"+
+                                            "<h3 class='categoryFeat-heading'>"+value['name']+"</h3>"+
+                                            "<small class='categoryFeat-body'>"+value['review_count']+" reviews</small>"+
+                                        "</div>"+
+                                    "</div>"+
+                                "</a>"+
+                            "</div>";
+                    $("#popular_categories").append(div);
+                });
+            },
+            error: function() { alert("error loading PHP file");  }
+        });
+    }
+    function top_books() {
+        $.ajax({
+            url: '../server/index.php',
+            type: 'post',
+            data:{
+                purpose:"getTopbooks"
+            },
+            success: function(result){
+                var data = jQuery.parseJSON(result);        
+                var i=0;
+                $.each( data, function( key, value ) {
+                    var url = "./bookdetail.html?category="+value['category']+"&subcategory="+value['subcategory']+"&book="+value['id'];
+                    if(i==0){
+                        var div =   "<div class='item active'>"+
+                                        "<img src=../images/"+value['image']+" alt="+value['name']+"style='width:100%;''>"+
+                                        "<div class='carousel-caption'>"+
+                                          "<a href="+url+">"+
+                                            "<h3>"+value['name']+"</h3>"+
+                                          "</a>"+
+                                        "</div>"+
+                                    "</div>";
+                        var indicator = "<li data-target='#myCarousel active' data-slide-to='0'></li>";
+                    }else{
+                        var div =   "<div class='item'>"
+                                        "<img src=../images/"+value['image']+" alt="+value['name']+" style='width:100%;''>"+
+                                        "<div class='carousel-caption'>"+
+                                          "<a href="+url+">"+
+                                            "<h3>"+value['name']+"</h3>"+
+                                          "</a>"+
+                                        "</div>"+
+                                    "</div>";
+                        var indicator = "<li data-target='#myCarousel' data-slide-to="+i+"></li>";
+                    }
+                    $(".carousel-inner").append(div);
+                    $(".carousel-indicators").append(indicator);
+                    i++;
+                });
+            },
+            error: function() { alert("error loading PHP file");  }
+        });
+    }
+
+    $(".write_review_header").on("click", function() {
+        window.location.href = "review.html";
+    });
+  </script>
+    <style>
+        .categoryFeat {
+            background-position: center;
+            background-size: cover;
+            display: table;
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+        .categoryFeat-content {
+            color: white;
+            display: table-cell;
+            font-size: 16px;
+            position: relative;
+            text-align: center;
+            vertical-align: middle;
+            z-index: 1;
+        }
+        .categoryFeat-heading {
+            color: inherit;
+        }
+        .categoryFeat-body {
+            font-size: 14px;
+            opacity: .9;
+            filter: alpha(opacity=90);
+        }
+        #popular-categories {
+            padding-bottom: 48px;
+            padding-top: 48px;
+        }
+        footer {
+            background-color: #222;
+            color: white;
+            padding: 15px;
+            text-align: center;
+                clear: both;
+            position: relative;
+            z-index: 10;
+            height: 3em;
+            margin-top: -3em;
+        }
+		
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <!-- <div class="navbar-header"> -->
+      <!-- <li class="navbar-publisher home_page"><a href="#">Comet Library</a></li> -->
+    <!-- </div> -->
+    <ul class="nav navbar-nav">
+	  <li class="home_page"><a href="#">Comet Library</a></li>
+      <li class="home_page"><a href="#">Home</a></li>
+      <li class="dropdown"><a class="dropdown-toggle categories" data-toggle="dropdown" href="#">Categories<span class="caret"></span></a>
+        <ul class="dropdown-menu category">
+        </ul>
+      </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+      <li class="logIn" style='display: none;'><a href="#" data-toggle="modal" data-target="#loginModal"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+      <li class="dropdown loggedIn" style='display: none;'>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <span class="glyphicon glyphicon-user"></span> 
+                        <strong id="logged-username"></strong>
+                        <span class="glyphicon glyphicon-chevron-down"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <div class="navbar-wishlist">
+                                <a href="#" class="btn btn-block wishlist">Wishlist</a>
+                            </div>
+							
+                            <div class="navbar-login navbar-login-session">
+                                <a href="#" class="btn btn-danger btn-block logout">Log Out</a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+      <li class="write_review_header1"><a href="https://www.facebook.com/utdallas/"><span class="glyphicon"></span>Facebook</a></li>
+	  <li class="write_review_header1"><a href="https://www.instagram.com/ut_dallas/?hl=en"><span class="glyphicon"></span>Instagram</a></li>
+    </ul>
+     <form class="navbar-form navbar-left search">
+          <div class="input-group">
+            <input type="text" class="form-control search_query" placeholder="Search books" size="50">
+        <div class="input-group-btn">
+          <button class="btn btn-default" type="submit">
+            <i class="glyphicon glyphicon-search"></i>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</nav>
+  
+<div class="container">
+        <div class="modal fade" id="loginModal" role="dialog">
+            <!--<div class="modal-dialog" style="width:1000px">-->
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div id="loginbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 loginbox"> 
+                        <div class="panel panel-info" > 
+                            <div class="panel-heading panel-title"> 
+                                Sign In 
+                            </div> 
+                            <div class="panel-body panel-pad"> 
+                                <div id="login-alert" class="alert alert-danger col-sm-12 login-alert"></div> 
+                                    <form id="loginform" class="form-horizontal" role="form">  
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon">
+                                                <i class="glyphicon glyphicon-user"></i>
+                                            </span> 
+                                            <input id="login-username" type="text" class="form-control" name="username" value="" placeholder="username or email"> 
+                                        </div> 
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span> 
+                                            <input id="login-password" type="password" class="form-control" name="password" placeholder="password"> 
+                                        </div> 
+                                        <div class="input-group"> 
+                                            <div class="forgot-password"> 
+                                                <a href="#">Forgot password?</a> 
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group margT10">
+                                            <div class="col-sm-12 controls"> 
+                                                <button id="btn-login" type="button" name="signinbutton" class="btn btn-block btn-success">  &nbsp; Login </button>                        
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="no-acc"> 
+                                                    Don't have an account! 
+                                                    <a href="#" onClick="$('#loginbox').hide(); $('#signupbox').show()"> Sign Up Here </a>
+                                                </div> 
+                                            </div> 
+                                        </div> 
+                                    </form>    
+                                </div>    
+                            </div>     
+                        </div>
+                    </div>   
+                    <div id="signupbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 signup-box"> 
+                        <div class="panel panel-info"> 
+                            <div class="panel-heading"> 
+                                <div class="panel-title"> Sign Up </div>
+                            </div> 
+                            <div class="panel-body"> 
+                                <form id="signupform" class="form-horizontal" role="form"> 
+                                    <div id="signupalert" class="alert alert-danger login-alert"> 
+                                        <p> Error: </p> 
+                                        <span></span> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="username" class="col-md-3 control-label">Username</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="username" name="username" placeholder="Username"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="firstname" class="col-md-3 control-label">First Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="fname" name="fname" placeholder="First Name"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="lastname" class="col-md-3 control-label">Last Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="lname" name="lname" placeholder="Last Name"> 
+                                        </div> 
+                                    </div>                 
+                                    <div class="form-group"> 
+                                        <label for="email" class="col-md-3 control-label">Email</label>
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="email" name="email"  placeholder="Email Address"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="password" class="col-md-3 control-label">Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="repassword" class="col-md-3 control-label">Confirm Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" id="repassword" class="form-control" name="repassword" placeholder="Confirm Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <div class="col-md-offset-3 col-md-9"> 
+                                            <button id="btn-signup" type="button" name="signupbutton" class="btn btn-info"> <i class="icon-hand-right"></i> &nbsp; Sign Up </button> 
+                                        </div>
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="signin"> 
+                                                    Already have an account! 
+                                                    <a id="signinlink" href="#" onclick="$('#signupbox').hide(); $('#loginbox').show()">Sign In</a>
+                                                </div> 
+                                            </div> 
+                                        </div>
+                                    </div>
+                                </form>
+                                <div id="passwordrules">
+                                    <h4>Password must meet the following requirements:</h4>
+                                    <ul>        
+                                        <li id="length" class="invalid">At least <strong>8 characters</strong></li>
+                                        <li id="letter" class="invalid">At least <strong>one letter</strong></li>
+                                        <li id="capital" class="invalid">At least <strong>one capital letter</strong></li>
+                                        <li id="special" class="invalid">At least <strong>one special character</strong></li>
+                                        <li id="number" class="invalid">At least <strong>one number</strong></li>
+                                    </ul>
+                                </div>
+                            </div> 
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>        
+    </div>
+
+
+
+
+
+
+
+    <div class="container">
+  <h2>Favourite books</h2>
+  <div id="myCarousel" class="carousel slide" data-ride="carousel">
+    <!-- Indicators -->
+    <ol class="carousel-indicators">
+    </ol>
+
+    <div class="carousel-inner">
+  
+    </div>
+
+    <!-- Left and right controls -->
+    <a class="left carousel-control" href="#myCarousel" data-slide="prev">
+      <span class="glyphicon glyphicon-chevron-left"></span>
+      <span class="sr-only">Previous</span>
+    </a>
+    <a class="right carousel-control" href="#myCarousel" data-slide="next">
+      <span class="glyphicon glyphicon-chevron-right"></span>
+      <span class="sr-only">Next</span>
+    </a>
+  </div>
+</div>
+
+
+
+<section class="text-center" style="padding-bottom: 15px;">
+    <div id="popular_categories" class="container">
+        <h2><strong>Popular Categories</strong></h2>
+        <p class="text-muted">Browse our most popular categories</p>
+    </div>
+</section>
+
+<div id="bottom" style="padding-top: 70px;">
+            <footer>
+                  <p>CS6314.002 - Project</p>
+            </footer>
+        </div>
+</body>
+</html>

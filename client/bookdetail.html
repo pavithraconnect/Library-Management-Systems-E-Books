@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">	 
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<link rel="stylesheet" href="./css/check.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<!--<link rel="stylesheet" type="text/css" href="css/index.css">-->
+	<script  src="./js/commons.js"></script> 
+	<script  src="./js/check.js"></script>
+	<title>Library Management System</title>
+	<script>
+		$(document).ready( function() {
+			var category = getUrlParameter('category');
+			var subcategory = getUrlParameter('subcategory');
+			var book = getUrlParameter('book');
+			var username =getCookie("username");
+			getbook(category,subcategory,book);
+			$(".book").on("click", function(event) {
+				if(event.target.id == 'addwishlist'){
+					var username =getCookie("username");
+                	if(!username.trim()){
+                    	$('#addmodalForm').modal('hide');
+                    	$('#loginModal').modal('show');
+                	}
+                	else{
+                    	$.ajax({
+                    		url: '../server/categories.php',
+                    		type: 'post',
+                    		data:{
+							
+                    		    bookid:book,
+                    		    username:username,
+                    		    purpose:"addwishlist"
+                    		},
+                    		success: function(result){
+                    			if(result > 0){
+                    				$('#addwishlist').after("<span class='ok' id='addwishok'><b>Successfully added to your Wishlist</b></span>");
+                    				$('#addwishlist').prop('disabled', true);
+                    			}
+                    			else {
+                    				$('#addwishlist').after("<span class='exists' id='addwishexists'> <b>book already exists in your Wishlist</b></span>");
+               		     			$("#addwishlist").prop('disabled', true);
+                    			}
+                    		},  
+                    		error: function() { alert("error loading PHP file");  }
+               	 		});
+						
+                    }
+				}
+				else  if(event.target.id == 'addtoWishlist'){
+					var username =getCookie("username");
+                	if(!username.trim()){
+                    	$('#addmodalForm').modal('hide');
+                    	$('#loginModal').modal('show');
+                	}
+                	else{
+                    	$.ajax({
+                    		url: '../server/categories.php',
+                    		type: 'post',
+                    		data:{
+                    		    bookid:book,
+                    		    username:username,
+                    		    purpose:"addtoWishlist"
+                    		},
+                    		success: function(result){
+                    			if(result > 0){
+                    				$('#addtoWishlist').after("<span class='ok' id='Wishlistok'><b>Successfully added to your Wishlist</b></span>");
+                    				$('#addtoWishlist').prop('disabled', true);
+                    			}
+                    			else {
+                    				$('#addtoWishlist').after("<span class='exists' id='addWishlistexists'> <b>book already exists in your Wishlist</b></span>");
+               		     			$("#addtoWishlist").prop('disabled', true);
+                    			}
+                    		},  
+                    		error: function() { alert("error loading PHP file");  }
+               	 		});
+						}
+					}
+				else if(event.target.id == 'writeReview'){			
+					var username =getCookie("username");
+					if(!username.trim()){
+                    	$('#addmodalForm').modal('hide');
+                    	$('#loginModal').modal('show');
+                    }else{
+                    	$('#addmodalForm').modal('show');
+                	}
+                }
+				//
+				//var url = "wishlist.html";
+		        //window.location.href = url;
+			});
+
+				$('#writeReview').click(function(){
+					var username =getCookie("username");
+					if(!username.trim()){
+                    	$('#addmodalForm').modal('hide');
+                    	$('#loginModal').modal('show');
+                    }else{
+                    	$('#addmodalForm').modal('show');
+                    }
+				});
+                $('#addReviewButton').click(function(){
+                	var username =getCookie("username");
+                    var qual = $('.qual:checked').val();
+                    var comment = $('#feedback').val();
+                    if(!username.trim()){
+                    	$('#addmodalForm').modal('hide');
+                    	$('#loginModal').modal('show');
+                    }else{
+	                    if(qual == ''){
+	                        $('#rating').after("<span class='error' id='ratingerror'>Please rate it between 1-5</span>");             
+	                    }
+	                    if(comment == ''){
+	                        $('#feedback').after("<span class='error' id='reviewerror'>Please comment it</span>");             
+	                    }
+	                    else{
+	                        $.ajax({
+	                            url: '../server/categories.php',
+	                            type: 'post',
+	                            data:{
+	                                rating:qual,
+	                                comment:comment,
+	                                bookid:book,
+	                                username:username,
+	                                purpose:"pushreviews"
+	                            },
+	                            success: function(result){
+	                                location.reload();
+	                            },  
+	                            error: function() { alert("error loading PHP file");  }
+	                        });
+	                    }
+                	}
+                }); 
+
+		    $("#updatebutton").click(function(event) {
+		    	$.ajax({
+                    url: '../server/categories.php',
+                    type: 'post',
+                    data:{
+                        bookid:book,
+                        username:username,
+                        review:$('#inputMessage').val(),
+                        purpose:"updatereview"
+                    },
+                    success: function(result){
+		        		location.reload();
+                    },  
+                    error: function() { alert("error loading PHP file");  }
+                });
+		    });
+		    $("#deletebutton").click(function(event) {
+				$.ajax({
+                    url: '../server/categories.php',
+                    type: 'post',
+                    data:{
+                        bookid:book,
+                        username:username,
+                        review:$('#deleteinputMessage').val(),
+                        purpose:"deletereview"
+                    },
+                    success: function(result){
+                    	location.reload();
+                    },  
+                    error: function() { alert("error loading PHP file");  }
+                });
+		    
+		    });
+		});
+
+		var getUrlParameter = function(sParam) {
+			var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+				sURLVariables = sPageURL.split('&'),
+				sParameterName,
+				i;
+			for (i = 0; i < sURLVariables.length; i++) {
+				sParameterName = sURLVariables[i].split('=');
+				if (sParameterName[0] === sParam) {
+					return sParameterName[1] === undefined ? true : sParameterName[1];
+				}
+			}
+		};
+
+		var getbook = function(category,subcategory,book) {
+			var username = getCookie("username");
+			$.ajax({
+				url: '../server/categories.php',
+				type: 'post',
+				data:{
+					category:category,
+					subcategory:subcategory,
+					book:book,
+					username:username,
+					purpose:"getbook"
+				},
+				success: function(result){
+					var data = jQuery.parseJSON(result);
+					var reviewdiv;
+					var con = "<div class='container'><div class='row'>";
+					var rating;
+					$.each( data, function( key, value ) {
+						if(value['average'] == 0){
+							rating = 0;
+						}
+						else if(value['average'] == 1){
+							rating = 10;
+						}						
+						else if(value['average'] == 2){
+							rating = 29;
+						}						
+						else if(value['average'] == 3){
+							rating = 40;
+						}
+						else if(value['average'] == 4){
+							rating = 50;
+						}
+						else if(value['average'] == 5){
+							rating = 70;
+						}
+						else if(value['average'] > 0 && value['average'] < 1){
+							rating = 6;
+						}
+						else if(value['average'] > 1 && value['average'] < 2){
+							rating = 18;
+						}
+						else if(value['average'] > 2 && value['average'] < 3){
+							rating = 33;
+						}
+						else if(value['average'] > 3 && value['average'] < 4){
+							rating = 46;
+						}
+						else if(value['average'] > 4 && value['average'] < 5){
+							rating = 60;
+						}
+
+						var divvalue = con+"<div class='col-xs-4 item-photo'><img style='max-width:100%;'' src='../images/"+value['images']+"'/></div><div class='col-xs-5' style='border:0px solid gray'><h3>"+value['name']+"</h3><div class='star-box' style='display: inline-block;width:auto ;white-space: nowrap;'><span class='unfilled' style='color:#d3d3d3; position: absolute;'><b>&#9733;&#9733;&#9733;&#9733;&#9733;</b></span><span class='filled' style='color:#e9ce18; white-space: nowrap; overflow: hidden;position: absolute;width:"+rating+"px'><b>&#9733;&#9733;&#9733;&#9733;&#9733;</b></span></div><small style='color:#337ab7;font-size:10px'><b>( "+value['total']+" reviews)</b></small><br/><br/><h6 class='title-no_of_copies'><h5>TYPE:</h5></h6><h3 style='margin-top:0px;'>E-BOOK</h3><div class='section' style='padding-bottom:20px;'><div class='row'><div class='col-sm-12 form-group'><a href='' id='writeReview' data-toggle='modal' class='btn btn-lg btn-warning'>Write a Review</a></div><div class='col-sm-12 form-group'><a href='' id='addwishlist' data-toggle='modal' class='btn btn-lg btn-warning'>Add To Wishlist</a></div><div class='col-sm-12 form-group'><a href='https://en.wikipedia.org/wiki/Harry_Potter_and_the_Prisoner_of_Azkaban_(film)' id='addpdf'class='btn btn-lg btn-warning'>View E-book </a></div></div></div></div></div><div class='col-xs-9'>";
+						
+						reviewdiv = divvalue+"<div class='reviews'><h3 style='margin-top:0px;'>book Reviews</h3><ul class='review' style='list-style-type: none;'>";
+						
+						$.each( value['reviews'], function( key, value ) {
+							if(value['rating'] == 0){
+								rating = 0;
+							}
+							else if(value['rating'] == 1){
+								rating = 10;
+							}						
+							else if(value['rating'] == 2){
+								rating = 29;
+							}						
+							else if(value['rating'] == 3){
+								rating = 40;
+							}
+							else if(value['rating'] == 4){
+								rating = 50;
+							}
+							else if(value['rating'] == 5){
+								rating = 70;
+							}
+							else if(value['rating'] > 0 && value['rating'] < 1){
+								rating = 6;
+							}
+							else if(value['rating'] > 1 && value['rating'] < 2){
+								rating = 18;
+							}
+							else if(value['rating'] > 2 && value['rating'] < 3){
+								rating = 33;
+							}
+							else if(value['rating'] > 3 && value['rating'] < 4){
+								rating = 46;
+							}
+							else if(value['rating'] > 4 && value['rating'] < 5){
+								rating = 60;
+							}
+
+							if(username == value['username']){
+								reviewdiv+= "<label><b>Looks like your have already reviewed this book. Here's your review</b></label><li id='"+value['id']+"'><b>Username:</b> "+value['username']+"<br/><div class='star-box1' style='display: inline-block;width:auto ;white-space: nowrap;'><span class='unfilled' style='color:#d3d3d3; position: absolute;'>&#9733;&#9733;&#9733;&#9733;&#9733;</span><span class='filled' style='color:#e9ce18; white-space: nowrap; overflow: hidden;position: absolute;width:"+rating+"px'>&#9733;&#9733;&#9733;&#9733;&#9733;</span></div><br/><br/><b>Reviewed on: </b>"+value['date']+"<br/><b>Comment</b><br/><textarea class='form-control' type='textarea' name='comments' id='comments' maxlength='1000' rows='7' readonly>"+value['review']+"</textarea></li><br/><button class='btn btn-lg' style='background-color:#00ff99' data-toggle='modal' data-target='#modalForm'>Update</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class='btn btn-lg' style='background-color:#00ff99' data-toggle='modal' data-target='#deletemodalForm'>Delete</button><br/><br/>";
+								$('#inputMessage').val(value['review']);
+								$('#deleteinputMessage').val(value['review']);
+							}
+							else {
+								reviewdiv+= "<li id='"+value['id']+"'><b>Username:</b> "+value['username']+"<br/><div class='star-box' style='display: inline-block;width:auto ;white-space: nowrap;'><span class='unfilled' style='color:#d3d3d3; position: absolute;'>&#9733;&#9733;&#9733;&#9733;&#9733;</span><span class='filled' style='color:#e9ce18; white-space: nowrap; overflow: hidden;position: absolute;width:"+rating+"px'>&#9733;&#9733;&#9733;&#9733;&#9733;</span></div><br/><br/><b>Reviewed on: </b>"+value['date']+"<br/><b>Comment</b><br/><textarea class='form-control' type='textarea' name='comments' id='comments' maxlength='1000' rows='7' readonly>"+value['review']+"</textarea></li><br/>";
+							}
+						});
+						
+					});
+					$('.book').append(reviewdiv+"</ul></div></div></div>");
+				},
+				error: function() { alert("error loading PHP file");  }
+			});		
+		};	
+	</script>
+</head>
+<body>
+	<nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        
+        <ul class="nav navbar-nav">
+		  <li><a class="home_page" href="#">Comet Library</a></li>
+          <li><a class="home_page" href="#">Home</a></li>
+          <li class="dropdown"><a class="dropdown-toggle categories" data-toggle="dropdown" href="#">Categories<span class="caret"></span></a>
+            <ul class="dropdown-menu category">
+            </ul>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="logIn" style='display: none;'><a href="#" data-toggle="modal" data-target="#loginModal"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+          <li class="dropdown loggedIn" style='display: none;'>
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <span class="glyphicon glyphicon-user"></span> 
+                <strong id="logged-username"></strong>
+                <span class="glyphicon glyphicon-chevron-down"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                <div class="navbar-wishlist">
+                    <a href="#" class="btn btn-block wishlist">Wishlist</a>
+                </div> 
+				
+                    <div class="navbar-login navbar-login-session">
+                        <a href="#" class="btn btn-danger btn-block logout">Log Out</a>
+                    </div>
+                </li>
+            </ul>
+        </li>
+         <li class="write_review_header1"><a href="https://www.facebook.com/utdallas/"><span class="glyphicon"></span>Facebook</a></li>
+	  <li class="write_review_header1"><a href="https://www.instagram.com/ut_dallas/?hl=en"><span class="glyphicon"></span>Instagram</a></li>
+        </ul>
+         <form class="navbar-form navbar-left search">
+              <div class="input-group">
+                <input type="text" class="form-control search_query" placeholder="Search books" size="50">
+            <div class="input-group-btn">
+              <button class="btn btn-default" type="submit">
+                <i class="glyphicon glyphicon-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </nav>
+  
+<div class="container">
+        <div class="modal fade" id="loginModal" role="dialog">
+            <!--<div class="modal-dialog" style="width:1000px">-->
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div id="loginbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 loginbox"> 
+                        <div class="panel panel-info" > 
+                            <div class="panel-heading panel-title"> 
+                                Sign In 
+                            </div> 
+                            <div class="panel-body panel-pad"> 
+                                <div id="login-alert" class="alert alert-danger col-sm-12 login-alert"></div> 
+                                    <form id="loginform" class="form-horizontal" role="form">  
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon">
+                                                <i class="glyphicon glyphicon-user"></i>
+                                            </span> 
+                                            <input id="login-username" type="text" class="form-control" name="username" value="" placeholder="username or email"> 
+                                        </div> 
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span> 
+                                            <input id="login-password" type="password" class="form-control" name="password" placeholder="password"> 
+                                        </div> 
+                                        <div class="input-group"> 
+                                            <div class="forgot-password"> 
+                                                <a href="#">Forgot password?</a> 
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group margT10">
+                                            <div class="col-sm-12 controls"> 
+                                                <button id="btn-login" type="button" name="signinbutton" class="btn btn-block btn-success">  &nbsp; Login </button>                        
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="no-acc"> 
+                                                    Don't have an account! 
+                                                    <a href="#" onClick="$('#loginbox').hide(); $('#signupbox').show()"> Sign Up Here </a>
+                                                </div> 
+                                            </div> 
+                                        </div> 
+                                    </form>    
+                                </div>    
+                            </div>     
+                        </div>
+                    </div>   
+                    <div id="signupbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 signup-box"> 
+                        <div class="panel panel-info"> 
+                            <div class="panel-heading"> 
+                                <div class="panel-title"> Sign Up </div>
+                            </div> 
+                            <div class="panel-body"> 
+                                <form id="signupform" class="form-horizontal" role="form"> 
+                                    <div id="signupalert" class="alert alert-danger login-alert"> 
+                                        <p> Error: </p> 
+                                        <span></span> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="username" class="col-md-3 control-label">Username</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="username" name="username" placeholder="Username"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="firstname" class="col-md-3 control-label">First Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="fname" name="fname" placeholder="First Name"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="lastname" class="col-md-3 control-label">Last Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="lname" name="lname" placeholder="Last Name"> 
+                                        </div> 
+                                    </div>                 
+                                    <div class="form-group"> 
+                                        <label for="email" class="col-md-3 control-label">Email</label>
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="email" name="email"  placeholder="Email Address"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="password" class="col-md-3 control-label">Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="repassword" class="col-md-3 control-label">Confirm Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" id="repassword" class="form-control" name="repassword" placeholder="Confirm Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <div class="col-md-offset-3 col-md-9"> 
+                                            <button id="btn-signup" type="button" name="signupbutton" class="btn btn-info"> <i class="icon-hand-right"></i> &nbsp; Sign Up </button> 
+                                        </div>
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="signin"> 
+                                                    Already have an account! 
+                                                    <a id="signinlink" href="#" onclick="$('#signupbox').hide(); $('#loginbox').show()">Sign In</a>
+                                                </div> 
+                                            </div> 
+                                        </div>
+                                    </div>
+                                </form>
+                                <div id="passwordrules">
+                                    <h4>Password must meet the following requirements:</h4>
+                                    <ul>        
+                                        <li id="length" class="invalid">At least <strong>8 characters</strong></li>
+                                        <li id="letter" class="invalid">At least <strong>one letter</strong></li>
+                                        <li id="capital" class="invalid">At least <strong>one capital letter</strong></li>
+                                        <li id="special" class="invalid">At least <strong>one special character</strong></li>
+                                        <li id="number" class="invalid">At least <strong>one number</strong></li>
+                                    </ul>
+                                </div>
+                            </div> 
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>        
+    </div>	
+	<div class="book">
+	</div>
+	
+
+	<div class="modal fade" id="modalForm" role="dialog">
+    	<div class="modal-dialog">
+        	<div class="modal-content">
+        	    <div class="modal-header">
+        	        <button type="button" class="close" data-dismiss="modal">
+            	        <span aria-hidden="true">&times;</span>
+                	    <span class="sr-only">Close</span>
+                	</button>
+                	<h4 class="modal-title" id="loginModalLabel">Update a Review</h4>
+            	</div>
+            	<div class="modal-body">
+                	<p class="statusMsg"></p>
+                	<form role="form">
+                    	<div class="form-group">
+                    	    <label for="inputMessage">Review</label>
+							<textarea class="form-control" rows="6" name="body" id="inputMessage" placeholder="Enter your message"cols="35"></textarea>
+                    	</div>
+                	</form>
+    	        </div>
+        	    <div class="modal-footer">
+					<button type="button" class="btn btn-primary submitBtn" id="updatebutton">Update</button>
+            	    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+	            </div>
+    	    </div>
+	    </div>
+	</div>
+
+	<div class="modal fade" id="deletemodalForm" role="dialog">
+    	<div class="modal-dialog">
+        	<div class="modal-content">
+        	    <div class="modal-header">
+        	        <button type="button" class="close" data-dismiss="modal">
+            	        <span aria-hidden="true">&times;</span>
+                	    <span class="sr-only">Close</span>
+                	</button>
+                	<h4 class="modal-title" id="loginModalLabel">Delete a Review</h4>
+            	</div>
+            	<div class="modal-body">
+                	<p class="statusMsg"></p>
+                	<form role="form">
+                    	<div class="form-group">
+                    	    <label for="inputMessage">Review</label>
+							<textarea class="form-control" rows="6" name="body" id="deleteinputMessage" cols="35" readonly></textarea>
+                    	</div>
+                	</form>
+    	        </div>
+        	    <div class="modal-footer">
+					<button type="button" class="btn btn-primary submitBtn" id="deletebutton">Delete</button>
+            	    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+	            </div>
+    	    </div>
+	    </div>
+	</div>
+
+	<div class="modal fade" id="addmodalForm" role="dialog">
+    	<div class="modal-dialog">
+        	<div class="modal-content">
+        	    <div class="modal-header">
+        	        <button type="button" class="close" data-dismiss="modal">
+            	        <span aria-hidden="true">&times;</span>
+                	    <span class="sr-only">Close</span>
+                	</button>
+                	<h4 class="modal-title" id="loginModalLabel">
+                	<h2>Write a Review!</h2>
+                	    <p>Please provide your review below: </p>
+                	</h4>
+            	</div>
+            	<div class="modal-body">
+			            <div class="row " style="margin-top: 50px">
+			                <div class="col-md-6 col-md-offset-3 form-container">
+			                        <div class="row">
+			                            <div class="col-sm-12 form-group">
+			                                <span>How do you rate your overall experience?</span><br/>
+			                                <style>
+												input[type="radio"] {
+ 	 												display: none;
+												}
+												.rate {
+  													color: grey !important;
+  													text-align: left !important;
+  													font-size: 30px !important;  
+  													margin: 1px !important;
+												}
+
+												.classification {
+  													direction: rtl !important;
+  													unicode-bidi: bidi-override !important;
+  													float: left !important;
+												}
+
+												label:hover,
+												label:hover ~ label {
+  													color: orange !important;
+												}
+
+												input[type="radio"]:checked ~ label {
+  													color: orange !important;
+												}
+
+											</style>
+			                                    <p class="classification" id="rating">
+			                                        <input id="radio1" type="radio" class="qual" name="rating1" value="5"><label for="radio1" class="rate">&#9733;</label>
+			                                        <input id="radio2" type="radio" class="qual" name="rating1" value="4"><label for="radio2" class="rate">&#9733;</label>
+			                                        <input id="radio3" type="radio" class="qual" name="rating1" value="3"><label for="radio3" class="rate">&#9733;</label>
+			                                        <input id="radio4" type="radio" class="qual" name="rating1" value="2"><label for="radio4" class="rate">&#9733;</label>
+			                                        <input id="radio5" type="radio" class="qual" name="rating1" value="1"><label for="radio5" class="rate">&#9733;</label>
+			                                </p>
+			                            </div>
+			                        </div>
+			                        <div class="row">
+			                            <div class="col-sm-12 form-group">
+			                                <label for="comments"> Comments:</label>
+			                                <textarea class="form-control" type="textarea" name="feedbackk" id="feedback" placeholder="Your Comments" maxlength="6000" rows="7"></textarea>
+			                            </div>
+			                        </div>
+			                    <div id="success_message" style="width:100%; height:100%; display:none; "> <h3>Posted your feedback successfully!</h3> </div>
+			                    <div id="error_message" style="width:100%; height:100%; display:none; "> <h3>Error</h3> Sorry there was an error sending your form. </div>
+			                </div>
+			            </div>
+
+    	        </div>
+    	        <div class="modal-footer">
+            		<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            		<button type="button" name="reviewsubmit" class="btn btn-primary submitBtn" id="addReviewButton">Add Review</button>
+	            </div>
+    	    </div>
+	    </div>
+	</div>
+
+</body>
+</html>

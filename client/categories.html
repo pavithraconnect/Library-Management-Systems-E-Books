@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script  src="./js/commons.js"></script>  
+	<link rel="stylesheet" href="./css/check.css">
+	<script  src="./js/check.js"></script>
+	<title>Library Management system</title>
+	<script>
+		$(document).ready( function() {
+			populateCategories();
+		    $(".categoryList1").on("click", function(event) {
+		    	if(event.target.className == "categoryListItem"){
+			       	var category = event.target.id;
+					var url = "subCategories.html?category="+category;
+			        window.location.href = url;
+			    }
+		    });
+			$("#add_update_category_save").on("click", function(event) {
+		    	var name = $("#add_update_category_name").val();
+                var image = $("#add_update_category_image").val();
+		    	$.ajax({
+					url: '../server/categories.php',
+					type: 'post',
+					data:{
+						purpose:"addcategory",
+						name: name,
+                        image: image
+					},
+					success: function(result){
+						$('#add_update_category_form').modal('hide');
+						location.reload();
+					},
+					error: function() { alert("error loading PHP file");  }
+				});	
+		    });
+		    $(".deleteCategory").on("click", function(event) {
+		    	$.ajax({
+					url: '../server/categories.php',
+					type: 'post',
+					data:{
+						purpose:"deleteCategory",
+						id: id
+					},
+					success: function(result){
+						location.reload();
+					},
+					error: function() { alert("error loading PHP file");  }
+				});
+		    });
+		});	
+        function deleteCategory(id){
+            $.ajax({
+                url: '../server/categories.php',
+                type: 'post',
+                data:{
+                    purpose:"deleteCategory",
+                    id: id
+                },
+                success: function(result){
+                    location.reload();
+                },
+                error: function() { alert("error loading PHP file");  }
+            });
+        }
+        function updateCategory(id){
+            var name = $("#update_category_name"+id).val();
+            var image = $("#update_category_image"+id).val();
+            $.ajax({
+                url: '../server/categories.php',
+                type: 'post',
+                data:{
+                    purpose:"updatecategory",
+                    id:id,
+                    name: name,
+                    image: image
+                },
+                success: function(result){
+
+                    location.reload();
+                },
+                error: function() { alert("error loading PHP file");  }
+            });
+        }
+
+		var populateCategories = function() {
+			$.ajax({
+				url: '../server/categories.php',
+				type: 'post',
+				data:{
+					purpose:"getcategories"
+				},
+				success: function(result){
+					var data = jQuery.parseJSON(result);		
+					$.each( data, function( key, value ) {
+                        var url = "./subCategories.html?category="+value['id'];
+                        var deleteClick = "deleteCategory("+value['id']+")";
+                        var editSaveClick = "updateCategory("+value['id']+")";
+                        var editModal = "add_update_category_form"+value['id'];
+                        var editModalPath = "#add_update_category_form"+value['id'];
+                        var editNameValue = "update_category_name"+value['id'];
+                        var editImageValue = "update_category_image"+value['id'];
+
+                        var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                                "<a href="+url+">"+
+                                    "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['image']+")''>"+
+                                        "<div class='categoryFeat-content'>"+
+                                            "<h3 class='categoryFeat-heading'>"+value['name']+"</h3>"+
+                                        "</div>"+
+                                    "</div>"+
+                                "</a>"+
+                                "<div class='admin' style='display:none'>"+
+                                "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+                                    "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+                                    "<span><strong>Edit</strong></span>"+
+                                "</a>"+
+                                "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+                                   "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+                                    "<span><strong>Delete</strong></span>"+
+                                "</a>"+
+
+                                "<div class='container'>"+
+                                    "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+                                      "<div class='modal-dialog' role='document'>"+
+                                        "<div class='modal-content'>"+
+                                            "<div class='modal-header'>"+
+                                                "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+                                                "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+                                                  "<span aria-hidden='true'>&times;</span>"+
+                                                "</button>"+
+                                            "</div>"+
+                                            "<div class='modal-body'>"+
+                                                "<span>Name : <input id="+editNameValue+" type='text' value="+value['name']+"></span><br \><br \>"+
+                                                "<span>Image : <input id="+editImageValue+" type='text' value="+value['image']+"></span>"+
+                                            "</div>"+
+                                            "<div class='modal-footer'>"+
+                                                "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+                                                "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+                                            "</div>"+
+                                        "</div>"+
+                                      "</div>"+
+                                    "</div>"+
+                                "</div>"+
+
+
+                                "</div>"+
+                            "</div>";
+                        $('.categoryList').append(div);
+					});
+                    var div = "<div class='col-sm-6 col-md-3 category_list admin' style='display:none; padding: 15px;'>"+
+                                "<a data-target='#add_update_category_form' data-toggle='modal' href='#'>"+
+                                    "<div class='categoryFeat' style='background-image: url(../images/add.jpg)''>"+
+                                        "<div class='categoryFeat-content'>"+
+                                            "<h3 class='categoryFeat-heading'>Add Category</h3>"+
+                                        "</div>"+
+                                    "</div>"+
+                                "</a>"+
+                            "</div>";
+                    $('.categoryList').append(div);
+                    isAdmin();
+				},
+				error: function() { alert("error loading PHP file");  }
+			});
+		};
+        function isAdmin() {
+          var admin = getCookie("admin");
+          if(admin == 'Y')
+            $(".admin").show();
+        }
+		var getUrlParameter = function(sParam) {
+		    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+		        sURLVariables = sPageURL.split('&'),
+		        sParameterName,
+		        i;
+		    for (i = 0; i < sURLVariables.length; i++) {
+		        sParameterName = sURLVariables[i].split('=');
+		        if (sParameterName[0] === sParam) {
+		            return sParameterName[1] === undefined ? true : sParameterName[1];
+		        }
+		    }
+		};	
+	</script>
+    <style>
+        .categoryFeat {
+            background-position: center;
+            background-size: cover;
+            display: table;
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+        .categoryFeat-content {
+            color: white;
+            display: table-cell;
+            font-size: 16px;
+            position: relative;
+            text-align: center;
+            vertical-align: middle;
+            z-index: 1;
+        }
+        .categoryFeat-heading {
+            color: inherit;
+        }
+        .categoryFeat-body {
+            font-size: 14px;
+            opacity: .9;
+            filter: alpha(opacity=90);
+        }
+        #popular-categories {
+            padding-bottom: 48px;
+            padding-top: 48px;
+        }
+    </style>
+</head>
+<body>
+	<nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        
+        <ul class="nav navbar-nav">
+		<li><a class="home_page" href="#">Comet Library</a></li>
+          <li><a class="home_page" href="#">Home</a></li>
+          <li class="dropdown"><a class="dropdown-toggle categories" data-toggle="dropdown" href="#">Categories<span class="caret"></span></a>
+            <ul class="dropdown-menu category">
+            </ul>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="logIn" style='display: none;'><a href="#" data-toggle="modal" data-target="#loginModal"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+          <li class="dropdown loggedIn" style='display: none;'>
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <span class="glyphicon glyphicon-user"></span> 
+                <strong id="logged-username"></strong>
+                <span class="glyphicon glyphicon-chevron-down"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                <div class="navbar-wishlist">
+                    <a href="#" class="btn btn-block wishlist">Wishlist</a>
+                </div> 
+				
+                    <div class="navbar-login navbar-login-session">
+                        <a href="#" class="btn btn-danger btn-block logout">Log Out</a>
+                    </div>
+                </li>
+            </ul>
+        </li>
+         <li class="write_review_header1"><a href="https://www.facebook.com/utdallas/"><span class="glyphicon"></span>Facebook</a></li>
+	  <li class="write_review_header1"><a href="https://www.instagram.com/ut_dallas/?hl=en"><span class="glyphicon"></span>Instagram</a></li>
+        </ul>
+         <form class="navbar-form navbar-left search">
+              <div class="input-group">
+                <input type="text" class="form-control search_query" placeholder="Search books" size="50">
+            <div class="input-group-btn">
+              <button class="btn btn-default" type="submit">
+                <i class="glyphicon glyphicon-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </nav>
+  
+<div class="container">
+        <div class="modal fade" id="loginModal" role="dialog">
+            <!--<div class="modal-dialog" style="width:1000px">-->
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div id="loginbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 loginbox"> 
+                        <div class="panel panel-info" > 
+                            <div class="panel-heading panel-title"> 
+                                Sign In 
+                            </div> 
+                            <div class="panel-body panel-pad"> 
+                                <div id="login-alert" class="alert alert-danger col-sm-12 login-alert"></div> 
+                                    <form id="loginform" class="form-horizontal" role="form">  
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon">
+                                                <i class="glyphicon glyphicon-user"></i>
+                                            </span> 
+                                            <input id="login-username" type="text" class="form-control" name="username" value="" placeholder="username or email"> 
+                                        </div> 
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span> 
+                                            <input id="login-password" type="password" class="form-control" name="password" placeholder="password"> 
+                                        </div> 
+                                        <div class="input-group"> 
+                                            <div class="forgot-password"> 
+                                                <a href="#">Forgot password?</a> 
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group margT10">
+                                            <div class="col-sm-12 controls"> 
+                                                <button id="btn-login" type="button" name="signinbutton" class="btn btn-block btn-success">  &nbsp; Login </button>                        
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="no-acc"> 
+                                                    Don't have an account! 
+                                                    <a href="#" onClick="$('#loginbox').hide(); $('#signupbox').show()"> Sign Up Here </a>
+                                                </div> 
+                                            </div> 
+                                        </div> 
+                                    </form>    
+                                </div>    
+                            </div>     
+                        </div>
+                    </div>   
+                    <div id="signupbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 signup-box"> 
+                        <div class="panel panel-info"> 
+                            <div class="panel-heading"> 
+                                <div class="panel-title"> Sign Up </div>
+                            </div> 
+                            <div class="panel-body"> 
+                                <form id="signupform" class="form-horizontal" role="form"> 
+                                    <div id="signupalert" class="alert alert-danger login-alert"> 
+                                        <p> Error: </p> 
+                                        <span></span> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="username" class="col-md-3 control-label">Username</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="username" name="username" placeholder="Username"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="firstname" class="col-md-3 control-label">First Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="fname" name="fname" placeholder="First Name"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="lastname" class="col-md-3 control-label">Last Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="lname" name="lname" placeholder="Last Name"> 
+                                        </div> 
+                                    </div>                 
+                                    <div class="form-group"> 
+                                        <label for="email" class="col-md-3 control-label">Email</label>
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="email" name="email"  placeholder="Email Address"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="password" class="col-md-3 control-label">Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="repassword" class="col-md-3 control-label">Confirm Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" id="repassword" class="form-control" name="repassword" placeholder="Confirm Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <div class="col-md-offset-3 col-md-9"> 
+                                            <button id="btn-signup" type="button" name="signupbutton" class="btn btn-info"> <i class="icon-hand-right"></i> &nbsp; Sign Up </button> 
+                                        </div>
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="signin"> 
+                                                    Already have an account! 
+                                                    <a id="signinlink" href="#" onclick="$('#signupbox').hide(); $('#loginbox').show()">Sign In</a>
+                                                </div> 
+                                            </div> 
+                                        </div>
+                                    </div>
+                                </form>
+                                <div id="passwordrules">
+                                    <h4>Password must meet the following requirements:</h4>
+                                    <ul>        
+                                        <li id="length" class="invalid">At least <strong>8 characters</strong></li>
+                                        <li id="letter" class="invalid">At least <strong>one letter</strong></li>
+                                        <li id="capital" class="invalid">At least <strong>one capital letter</strong></li>
+                                        <li id="special" class="invalid">At least <strong>one special character</strong></li>
+                                        <li id="number" class="invalid">At least <strong>one number</strong></li>
+                                    </ul>
+                                </div>
+                            </div> 
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>        
+    </div>	
+    <section class="text-center" style="padding: 15px;">
+        <div id="popular_categories" class="categoryList admin" class="container">
+            <h2><strong>Browse Categories</strong></h2>
+        </div>
+    </section>
+
+		<!-- Modal -->
+		<div class="container">
+			<div class="modal fade" id="add_update_category_form" tabindex="-1" role="dialog" aria-labelledby="ModalLongTitle" aria-hidden="true">
+			  <div class="modal-dialog" role="document">
+			    <div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="ModalLongTitle">Category</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						  <span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<span>Name : <input id="add_update_category_name" ype="text"></span><br \><br \>
+                        <span>Image : <input id="add_update_category_image" ype="text"></span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+						<button id="add_update_category_save" type="button" class="btn btn-primary">Save changes</button>
+					</div>
+			    </div>
+			  </div>
+			</div>
+		</div>
+		</div>	
+
+
+	</div>
+</body>
+</html>

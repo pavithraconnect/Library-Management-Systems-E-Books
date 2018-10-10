@@ -1,0 +1,33 @@
+@import boostrap.less
+
+input[type="radio"] {
+  display: none;
+}
+
+.rate {
+  color: grey;
+  text-align: left;
+  font-size: 30px;  
+  margin: 1px;
+}
+
+.classification {
+  direction: rtl;
+  unicode-bidi: bidi-override;
+  float: left;
+}
+
+label:hover,
+label:hover ~ label {
+  color: orange;
+}
+
+input[type="radio"]:checked ~ label {
+  color: orange;
+}
+
+
+.error {
+	padding: 0px 2px;
+	color: red;
+}

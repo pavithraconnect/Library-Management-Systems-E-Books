@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<!--<link rel="stylesheet" type="text/css" href="css/index.css">-->
+	<script  src="./js/commons.js"></script>  
+	<link rel="stylesheet" href="./css/check.css">
+	<script  src="./js/check.js"></script>
+	<title>Library Mangement system</title>
+	<style type="text/css">
+		.navbar-fixed-left {
+  width: 140px;
+  position: fixed;
+  border-radius: 0;
+  height: 100%;
+}
+
+.navbar-fixed-left .navbar-nav > li {
+  float: none;  /* Cancel default li float: left */
+  width: 139px;
+}
+
+.navbar-fixed-left + .container {
+  padding-left: 160px;
+}
+
+/* On using dropdown menu (To right shift popuped) */
+.navbar-fixed-left .navbar-nav > li > .dropdown-menu {
+  margin-top: -50px;
+  margin-left: 140px;
+}
+	</style>
+	<script>
+		$(document).ready( function() {
+			var category = getUrlParameter('category');
+			var subcategory = getUrlParameter('subcategory');
+			var query = getUrlParameter('query');
+			if (typeof(query) == "undefined"){
+				getbooks(category,subcategory,0);
+			}else{
+				searchbooks(query);
+			}
+			$(".books").on("click", function(event) {
+				if(event.target.className == 'listbook') {
+		       		var book = event.target.id;
+					var url = "bookdetail.html?category="+category+"&subcategory="+subcategory+"&book="+book;
+		        	window.location.href = url;
+		    	}
+		    });
+
+		   $("#publisherfilters").click(function(event) {
+		    	var checkedvalue = $('.publisher:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var featurecheckedvalue = $('.feature:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var publisherchecked;
+				var featurechecked;
+				if(featurecheckedvalue.length > 0){
+					featurechecked = 'checked';
+				}
+				if(checkedvalue.length > 0){
+					publisherchecked = 'checked';
+				}
+		    	$('.books').empty();
+		    	$("#publisherfilters").empty();
+		    	$("#featurefilters").empty();
+		    	var count = 0;
+				if(checkedvalue.length > 0 || (checkedvalue.length == 0 && featurecheckedvalue.length > 0)){
+					if(query !=''){
+						$.ajax({
+							url: '../server/categories.php',
+							type: 'post',
+							data:{
+								query:query,
+								values:checkedvalue,
+								featurevalues:featurecheckedvalue,
+								count:count,
+								purpose:"searchpublishers"
+							},
+							success: function(result){	
+								var data = jQuery.parseJSON(result);
+								var publishers = [];
+								var features = [];
+								var stringarray;
+								$.each( data, function( key, value ) {
+									var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+								var deleteClick = "deletebook("+value['id']+")";
+                        		var editSaveClick = "updatebook("+value['id']+")";
+                        		var editModal = "add_update_book_form"+value['id'];
+                        		var editModalPath = "#add_update_book_form"+value['id'];
+                        		var editNameValue = "update_book_name"+value['id'];
+                        		var editpublisherValue = "update_book_publisher"+value['id'];
+                        		var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        		var editdescValue = "update_book_desc"+value['id'];
+                        		var editFeatureValue = "update_book_feature"+value['features'];
+                        		var editImageValue = "update_book_image"+value['id'];
+
+								var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                            	    "<a href="+url+">"+
+                            	        "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                            	        "</div>"+
+                            	    "</a>"+
+                            	    "<a href="+url+">"+
+                            	        "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                            	        "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                            	    "</a>"+
+
+      	                          "<div class='admin' style='display:none'>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+        	                            "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+        	                            "<span><strong>Edit</strong></span>"+
+        	                        "</a>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+        	                           "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+        		                            "<span><strong>Delete</strong></span>"+
+           	                    	 "</a>"+
+
+        	                        "<div class='container'>"+
+        	                            "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+        	                              "<div class='modal-dialog' role='document'>"+
+        	                                "<div class='modal-content'>"+
+        	                                    "<div class='modal-header'>"+
+        	                                        "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+        	                                        "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+        	                                          "<span aria-hidden='true'>&times;</span>"+
+        	                                        "</button>"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-body'>"+
+        	                                        "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-footer'>"+
+        	                                        "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+        	                                        "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+        	                                    "</div>"+
+        	                                "</div>"+
+        	                              "</div>"+
+        	                            "</div>"+
+        	                        	"</div>"+
+        	                    	"</div>";
+									$('.books').append(div);
+									isAdmin();
+									publishers.push(value['publisher']);
+									stringarray = value['features'].split(",");
+									$.each(stringarray, function( i, val ) {
+										features.push(val);
+									});
+								});
+								$.unique(features);
+								$.unique(publishers);
+
+								$.each(publishers, function( i, val ) {
+									$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value='+val+' '+publisherchecked+'>'+val+'</li>');	
+								});					
+								$.each(features, function( i, val ) {
+									$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'" '+featurechecked+'>'+val+'</li>');	
+								});
+								//$('.publishers').prop('checked', true);
+								$(".publishers").show();
+								$(".features").show();
+							},	
+							error: function() { alert("error loading PHP file");  }
+						});
+		    		}
+		    		else {
+						$.ajax({
+							url: '../server/categories.php',
+							type: 'post',
+							data:{
+								category:category,
+								subcategory:subcategory,
+								values:checkedvalue,
+								featurevalues:featurecheckedvalue,
+								count:count,
+								purpose:"getpublishers"
+							},
+							success: function(result){
+								var data = jQuery.parseJSON(result);
+								var publishers = [];
+								var features = [];
+								var stringarray;
+								$.each( data, function( key, value ) {
+									var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+								var deleteClick = "deletebook("+value['id']+")";
+                        		var editSaveClick = "updatebook("+value['id']+")";
+                        		var editModal = "add_update_book_form"+value['id'];
+                        		var editModalPath = "#add_update_book_form"+value['id'];
+                        		var editNameValue = "update_book_name"+value['id'];
+                        		var editpublisherValue = "update_book_publisher"+value['id'];
+                        		var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        		var editdescValue = "update_book_desc"+value['id'];
+                        		var editFeatureValue = "update_book_feature"+value['features'];
+                        		var editImageValue = "update_book_image"+value['id'];
+
+								var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                            	    "<a href="+url+">"+
+                            	        "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                            	        "</div>"+
+                            	    "</a>"+
+                            	    "<a href="+url+">"+
+                            	        "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                            	        "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                            	    "</a>"+
+
+      	                          "<div class='admin' style='display:none'>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+        	                            "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+        	                            "<span><strong>Edit</strong></span>"+
+        	                        "</a>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+        	                           "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+        		                            "<span><strong>Delete</strong></span>"+
+           	                    	 "</a>"+
+
+        	                        "<div class='container'>"+
+        	                            "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+        	                              "<div class='modal-dialog' role='document'>"+
+        	                                "<div class='modal-content'>"+
+        	                                    "<div class='modal-header'>"+
+        	                                        "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+        	                                        "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+        	                                          "<span aria-hidden='true'>&times;</span>"+
+        	                                        "</button>"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-body'>"+
+        	                                        "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-footer'>"+
+        	                                        "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+        	                                        "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+        	                                    "</div>"+
+        	                                "</div>"+
+        	                              "</div>"+
+        	                            "</div>"+
+        	                        	"</div>"+
+        	                    	"</div>";
+									$('.books').append(div);
+									isAdmin();
+									publishers.push(value['publisher']);
+									stringarray = value['features'].split(",");
+									$.each(stringarray, function( i, val ) {
+										features.push(val);
+									});
+								});
+								$.unique(features);
+								$.unique(publishers);
+
+								$.each(publishers, function( i, val ) {
+									$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value="'+val+'" '+publisherchecked+'>'+val+'</li>');	
+								});					
+								$.each(features, function( i, val ) {
+									$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'" '+featurechecked+'>'+val+'</li>');	
+								});
+								//$('.publishers').prop('checked', true);
+								$(".publishers").show();
+								$(".features").show();
+							},
+							error: function() { alert("error loading PHP file");  }
+						});
+
+		    		}
+		    	}
+		    	else{
+		    		$('.books').empty();
+		    		$("#publisherfilters").empty();
+		    		$("#featurefilters").empty();
+		    		if(typeof(query) == "undefined"){
+		    			getbooks(category,subcategory,0);
+		    		}
+		    		else {		    			
+		    			searchbooks(query);
+		    		}
+		    	}
+
+    		});
+		    $(".pagination").click(function(event){
+    			$(".pagination .active").toggleClass("active");
+		    	var pageNo = event.target.text;
+		    	var parent = event.target.parentElement;
+		    	parent.className = "active";
+		    	var category = getUrlParameter('category');
+				var subcategory = getUrlParameter('subcategory');
+				var checkedvalue = $('.publisher:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var featurecheckedvalue = $('.feature:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var publisherchecked;
+				var featurechecked;
+				if(featurecheckedvalue.length > 0 || checkedvalue.length > 0){
+					getFilterbooks(pageNo-1);
+				}else{
+					$('.books').empty();
+		    		getbooks(category,subcategory,pageNo-1);
+				}
+		    });
+		    function getFilterbooks(count){
+		    		var checkedvalue = $('.publisher:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var featurecheckedvalue = $('.feature:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var publisherchecked;
+				var featurechecked;
+				if(featurecheckedvalue.length > 0){
+					featurechecked = 'checked';
+				}
+				if(checkedvalue.length > 0){
+					publisherchecked = 'checked';
+				}
+		    	$('.books').empty();
+		    	$("#publisherfilters").empty();
+		    	$("#featurefilters").empty();
+				if(checkedvalue.length > 0 || (checkedvalue.length == 0 && featurecheckedvalue.length > 0)){
+					if(query !=''){
+						$.ajax({
+							url: '../server/categories.php',
+							type: 'post',
+							data:{
+								query:query,
+								values:checkedvalue,
+								featurevalues:featurecheckedvalue,
+								count:count,
+								purpose:"searchpublishers"
+							},
+							success: function(result){	
+								var data = jQuery.parseJSON(result);
+								var publishers = [];
+								var features = [];
+								var stringarray;
+								$.each( data, function( key, value ) {
+									var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+								var deleteClick = "deletebook("+value['id']+")";
+                        		var editSaveClick = "updatebook("+value['id']+")";
+                        		var editModal = "add_update_book_form"+value['id'];
+                        		var editModalPath = "#add_update_book_form"+value['id'];
+                        		var editNameValue = "update_book_name"+value['id'];
+                        		var editpublisherValue = "update_book_publisher"+value['id'];
+                        		var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        		var editdescValue = "update_book_desc"+value['id'];
+                        		var editFeatureValue = "update_book_feature"+value['features'];
+                        		var editImageValue = "update_book_image"+value['id'];
+
+								var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                            	    "<a href="+url+">"+
+                            	        "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                            	        "</div>"+
+                            	    "</a>"+
+                            	    "<a href="+url+">"+
+                            	        "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                            	        "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                            	    "</a>"+
+
+      	                          "<div class='admin' style='display:none'>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+        	                            "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+        	                            "<span><strong>Edit</strong></span>"+
+        	                        "</a>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+        	                           "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+        		                            "<span><strong>Delete</strong></span>"+
+           	                    	 "</a>"+
+
+        	                        "<div class='container'>"+
+        	                            "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+        	                              "<div class='modal-dialog' role='document'>"+
+        	                                "<div class='modal-content'>"+
+        	                                    "<div class='modal-header'>"+
+        	                                        "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+        	                                        "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+        	                                          "<span aria-hidden='true'>&times;</span>"+
+        	                                        "</button>"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-body'>"+
+        	                                        "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-footer'>"+
+        	                                        "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+        	                                        "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+        	                                    "</div>"+
+        	                                "</div>"+
+        	                              "</div>"+
+        	                            "</div>"+
+        	                        	"</div>"+
+        	                    	"</div>";
+									$('.books').append(div);
+									isAdmin();
+									publishers.push(value['publisher']);
+									stringarray = value['features'].split(",");
+									$.each(stringarray, function( i, val ) {
+										features.push(val);
+									});
+								});
+								$.unique(features);
+								$.unique(publishers);
+
+								$.each(publishers, function( i, val ) {
+									$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value='+val+' '+publisherchecked+'>'+val+'</li>');	
+								});					
+								$.each(features, function( i, val ) {
+									$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'" '+featurechecked+'>'+val+'</li>');	
+								});
+								//$('.publishers').prop('checked', true);
+								$(".publishers").show();
+								$(".features").show();
+							},	
+							error: function() { alert("error loading PHP file");  }
+						});
+		    		}
+		    		else {
+						$.ajax({
+							url: '../server/categories.php',
+							type: 'post',
+							data:{
+								category:category,
+								subcategory:subcategory,
+								values:checkedvalue,
+								featurevalues:featurecheckedvalue,
+								count:count,
+								purpose:"getpublishers"
+							},
+							success: function(result){
+								var data = jQuery.parseJSON(result);
+								var publishers = [];
+								var features = [];
+								var stringarray;
+								$.each( data, function( key, value ) {
+									var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+								var deleteClick = "deletebook("+value['id']+")";
+                        		var editSaveClick = "updatebook("+value['id']+")";
+                        		var editModal = "add_update_book_form"+value['id'];
+                        		var editModalPath = "#add_update_book_form"+value['id'];
+                        		var editNameValue = "update_book_name"+value['id'];
+                        		var editpublisherValue = "update_book_publisher"+value['id'];
+                        		var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        		var editdescValue = "update_book_desc"+value['id'];
+                        		var editFeatureValue = "update_book_feature"+value['features'];
+                        		var editImageValue = "update_book_image"+value['id'];
+
+								var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                            	    "<a href="+url+">"+
+                            	        "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                            	        "</div>"+
+                            	    "</a>"+
+                            	    "<a href="+url+">"+
+                            	        "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                            	        "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                            	    "</a>"+
+
+      	                          "<div class='admin' style='display:none'>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+        	                            "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+        	                            "<span><strong>Edit</strong></span>"+
+        	                        "</a>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+        	                           "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+        		                            "<span><strong>Delete</strong></span>"+
+           	                    	 "</a>"+
+
+        	                        "<div class='container'>"+
+        	                            "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+        	                              "<div class='modal-dialog' role='document'>"+
+        	                                "<div class='modal-content'>"+
+        	                                    "<div class='modal-header'>"+
+        	                                        "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+        	                                        "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+        	                                          "<span aria-hidden='true'>&times;</span>"+
+        	                                        "</button>"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-body'>"+
+        	                                        "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-footer'>"+
+        	                                        "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+        	                                        "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+        	                                    "</div>"+
+        	                                "</div>"+
+        	                              "</div>"+
+        	                            "</div>"+
+        	                        	"</div>"+
+        	                    	"</div>";
+									$('.books').append(div);
+									isAdmin();
+									publishers.push(value['publisher']);
+									stringarray = value['features'].split(",");
+									$.each(stringarray, function( i, val ) {
+										features.push(val);
+									});
+								});
+								$.unique(features);
+								$.unique(publishers);
+
+								$.each(publishers, function( i, val ) {
+									$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value="'+val+'" '+publisherchecked+'>'+val+'</li>');	
+								});					
+								$.each(features, function( i, val ) {
+									$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'" '+featurechecked+'>'+val+'</li>');	
+								});
+								//$('.publishers').prop('checked', true);
+								$(".publishers").show();
+								$(".features").show();
+							},
+							error: function() { alert("error loading PHP file");  }
+						});
+
+		    		}
+		    	}
+		    	else{
+		    		$('.books').empty();
+		    		$("#publisherfilters").empty();
+		    		$("#featurefilters").empty();
+		    		if(typeof(query) == "undefined"){
+		    			getbooks(category,subcategory,0);
+		    		}
+		    		else {		    			
+		    			searchbooks(query);
+		    		}
+		    	}
+		    }
+    		$("#featurefilters").click(function(event) {
+		    	var checkedvalue = $('.feature:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var publishercheckedvalue = $('.publisher:checkbox:checked').map(function() {
+		    		var checking = this.value;
+		    		return "'"+checking+"'";
+				}).get().join(",");
+				var publisherchecked;
+				var featurechecked;
+				if(publishercheckedvalue.length > 0){
+					publisherchecked = 'checked';
+				}
+				if(checkedvalue.length > 0){
+					featurechecked = 'checked';
+				}
+				var count = 0;
+				$('.books').empty();
+				$("#publisherfilters").empty();
+		    	$("#featurefilters").empty();
+				if(checkedvalue.length > 0 || (checkedvalue.length == 0 && publishercheckedvalue.length > 0)){
+					if(query !=''){
+						$.ajax({
+							url: '../server/categories.php',
+							type: 'post',
+							data:{
+								query:query,
+								values:checkedvalue,
+								count:count,
+								publishervalues:publishercheckedvalue,
+								purpose:"searchfeatures"
+							},
+							success: function(result){						
+								var data = jQuery.parseJSON(result);
+								var publishers = [];
+								var features = [];
+								var stringarray;
+								$.each( data, function( key, value ) {
+								var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+								var deleteClick = "deletebook("+value['id']+")";
+                        		var editSaveClick = "updatebook("+value['id']+")";
+                        		var editModal = "add_update_book_form"+value['id'];
+                        		var editModalPath = "#add_update_book_form"+value['id'];
+                        		var editNameValue = "update_book_name"+value['id'];
+                        		var editpublisherValue = "update_book_publisher"+value['id'];
+                        		var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        		var editdescValue = "update_book_desc"+value['id'];
+                        		var editFeatureValue = "update_book_feature"+value['features'];
+                        		var editImageValue = "update_book_image"+value['id'];
+
+								var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                            	    "<a href="+url+">"+
+                            	        "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                            	        "</div>"+
+                            	    "</a>"+
+                            	    "<a href="+url+">"+
+                            	        "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                            	        "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                            	    "</a>"+
+
+      	                          "<div class='admin' style='display:none'>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+        	                            "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+        	                            "<span><strong>Edit</strong></span>"+
+        	                        "</a>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+        	                           "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+        		                            "<span><strong>Delete</strong></span>"+
+           	                    	 "</a>"+
+
+        	                        "<div class='container'>"+
+        	                            "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+        	                              "<div class='modal-dialog' role='document'>"+
+        	                                "<div class='modal-content'>"+
+        	                                    "<div class='modal-header'>"+
+        	                                        "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+        	                                        "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+        	                                          "<span aria-hidden='true'>&times;</span>"+
+        	                                        "</button>"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-body'>"+
+        	                                        "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-footer'>"+
+        	                                        "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+        	                                        "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+        	                                    "</div>"+
+        	                                "</div>"+
+        	                              "</div>"+
+        	                            "</div>"+
+        	                        	"</div>"+
+        	                    	"</div>";
+									$('.books').append(div);
+									isAdmin();
+									publishers.push(value['publisher']);
+									stringarray = value['features'].split(",");
+									$.each(stringarray, function( i, val ) {
+										features.push(val);
+									});
+								});
+								$.unique(features);
+								$.unique(publishers);
+
+								$.each(publishers, function( i, val ) {
+									$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value='+val+' '+publisherchecked+'>'+val+'</li>');	
+								});					
+								$.each(features, function( i, val ) {
+									$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'" '+featurechecked+'>'+val+'</li>');	
+								});
+								//$('.publishers').prop('checked', true);
+								$(".publishers").show();
+								$(".features").show();
+							},	
+							error: function() { alert("error loading PHP file");  }
+						});
+					}
+					else{
+						$.ajax({
+							url: '../server/categories.php',
+							type: 'post',
+							data:{
+								category:category,
+								subcategory:subcategory,
+								values:checkedvalue,
+								publishervalues:publishercheckedvalue,
+								count:count,
+								purpose:"getfeatures"
+							},
+							success: function(result){
+								var data = jQuery.parseJSON(result);
+								var publishers = [];
+								var features = [];
+								var stringarray;
+								$.each( data, function( key, value ) {
+									var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+								var deleteClick = "deletebook("+value['id']+")";
+                        		var editSaveClick = "updatebook("+value['id']+")";
+                        		var editModal = "add_update_book_form"+value['id'];
+                        		var editModalPath = "#add_update_book_form"+value['id'];
+                        		var editNameValue = "update_book_name"+value['id'];
+                        		var editpublisherValue = "update_book_publisher"+value['id'];
+                        		var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        		var editdescValue = "update_book_desc"+value['id'];
+                        		var editFeatureValue = "update_book_feature"+value['features'];
+                        		var editImageValue = "update_book_image"+value['id'];
+
+								var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                            	    "<a href="+url+">"+
+                            	        "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                            	        "</div>"+
+                            	    "</a>"+
+                            	    "<a href="+url+">"+
+                            	        "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                            	        "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                            	    "</a>"+
+
+      	                          "<div class='admin' style='display:none'>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+        	                            "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+        	                            "<span><strong>Edit</strong></span>"+
+        	                        "</a>"+
+        	                        "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+        	                           "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+        		                            "<span><strong>Delete</strong></span>"+
+           	                    	 "</a>"+
+
+        	                        "<div class='container'>"+
+        	                            "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+        	                              "<div class='modal-dialog' role='document'>"+
+        	                                "<div class='modal-content'>"+
+        	                                    "<div class='modal-header'>"+
+        	                                        "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+        	                                        "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+        	                                          "<span aria-hidden='true'>&times;</span>"+
+        	                                        "</button>"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-body'>"+
+        	                                        "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+        	                                    "</div>"+
+        	                                    "<div class='modal-footer'>"+
+        	                                        "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+        	                                        "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+        	                                    "</div>"+
+        	                                "</div>"+
+        	                              "</div>"+
+        	                            "</div>"+
+        	                        	"</div>"+
+        	                    	"</div>";
+									$('.books').append(div);
+									isAdmin();
+									publishers.push(value['publisher']);
+									stringarray = value['features'].split(",");
+									$.each(stringarray, function( i, val ) {
+										features.push(val);
+									});
+								});
+								$.unique(features);
+								$.unique(publishers);
+
+								$.each(publishers, function( i, val ) {
+									$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value='+val+' '+publisherchecked+'>'+val+'</li>');	
+								});					
+								$.each(features, function( i, val ) {
+									$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'" '+featurechecked+'>'+val+'</li>');	
+								});
+								//$('.publishers').prop('checked', true);
+								$(".publishers").show();
+								$(".features").show();
+							},	
+							error: function() { alert("error loading PHP file");  }
+						});
+					}
+		    	}
+		    	else{
+		    		$('.books').empty();
+		    		$("#publisherfilters").empty();
+		    		$("#featurefilters").empty();
+		    		if(typeof(query) == "undefined"){
+		    			getbooks(category,subcategory,0);
+		    		}
+		    		else {		    			
+		    			searchbooks(query);
+		    		}
+		    	}
+
+    		});
+    		$("#add_update_book_save").on("click", function(event) {
+		    	var category = getUrlParameter('category');
+		    	var subcategory = getUrlParameter('subcategory');
+		    	var name = $("#add_update_book_name").val();
+		    	var publisher = $("#add_update_book_publisher").val();
+		    	var no_of_copies = $("#add_update_book_no_of_copies").val();
+		    	var desc = $("#add_update_book_desc").val();
+		    	var feature = $("#add_update_book_feature").val();
+		    	var image = $("#add_update_book_image").val();
+		    	$.ajax({
+					url: '../server/categories.php',
+					type: 'post',
+					data:{
+						purpose:"addbook",
+						name: name,
+						publisher: publisher,
+						no_of_copies: no_of_copies,
+						desc: desc,
+						feature: feature,
+						image:image,
+						category: category,
+						subcategory: subcategory
+					},
+					success: function(result){
+						$('#add_update_book_form').modal('hide');
+						location.reload();
+					},
+					error: function() { alert("error loading PHP file");  }
+				});	
+		    });
+		});
+
+		var getUrlParameter = function(sParam) {
+			var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+				sURLVariables = sPageURL.split('&'),
+				sParameterName,
+				i;
+			for (i = 0; i < sURLVariables.length; i++) {
+				sParameterName = sURLVariables[i].split('=');
+				if (sParameterName[0] === sParam) {
+					return sParameterName[1] === undefined ? true : sParameterName[1];
+				}
+			}
+		};
+		function deletebook(id){
+
+            $.ajax({
+                url: '../server/categories.php',
+                type: 'post',
+                data:{
+                    purpose:"deletebook",
+                    id: id
+                },
+                success: function(result){
+                    location.reload();
+                },
+                error: function() { alert("error loading PHP file");  }
+            });
+        }
+        function updatebook(id){
+            var category = getUrlParameter('category');
+		    var subcategory = getUrlParameter('subcategory');
+            var name = $("#update_book_name"+id).val();
+            var publisher = $("#update_book_publisher"+id).val();
+            var no_of_copies = $("#update_book_no_of_copies"+id).val();
+            var desc = $("#update_book_desc"+id).val();
+            var features = $("#update_book_feature"+id).val();
+            var image = $("#update_book_image"+id).val();
+            $.ajax({
+                url: '../server/categories.php',
+                type: 'post',
+                data:{
+                    purpose:"updatebook",
+                    id:id,
+                    name: name,
+                    category:category,
+                    subcategory:subcategory,
+                    publisher:publisher,
+                    no_of_copies:no_of_copies,
+                    desc:desc,
+                    features:features,
+                    image: image
+                },
+                success: function(result){
+                    location.reload();
+                },
+                error: function() { alert("error loading PHP file");  }
+            });
+        }
+		var getbooks = function(category,subcategory,count) {
+			$.ajax({
+				url: '../server/categories.php',
+				type: 'post',
+				data:{
+					category:category,
+					subcategory:subcategory,
+					count:count,
+					purpose:"getbooks"
+				},
+				success: function(result){
+					var data = jQuery.parseJSON(result);
+					var publishers = [];
+					var features = [];
+					var stringarray;
+					console.log(data);
+					$.each( data, function( key, value ) {
+						var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+						var deleteClick = "deletebook("+value['id']+")";
+                        var editSaveClick = "updatebook("+value['id']+")";
+                        var editModal = "add_update_book_form"+value['id'];
+                        var editModalPath = "#add_update_book_form"+value['id'];
+                        var editNameValue = "update_book_name"+value['id'];
+                        var editpublisherValue = "update_book_publisher"+value['id'];
+                        var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        var editdescValue = "update_book_desc"+value['id'];
+                        var editFeatureValue = "update_book_feature"+value['features'];
+                        var editImageValue = "update_book_image"+value['id'];
+
+						var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                                "<a href="+url+">"+
+                                    "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                                    "</div>"+
+                                "</a>"+
+                                "<a href="+url+">"+
+                                    "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                                    "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                                "</a>"+
+
+                                "<div class='admin' style='display:none'>"+
+                                "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+                                    "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+                                    "<span><strong>Edit</strong></span>"+
+                                "</a>"+
+                                "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+                                   "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+                                    "<span><strong>Delete</strong></span>"+
+                                "</a>"+
+
+                                "<div class='container'>"+
+                                    "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+                                      "<div class='modal-dialog' role='document'>"+
+                                        "<div class='modal-content'>"+
+                                            "<div class='modal-header'>"+
+                                                "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+                                                "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+                                                  "<span aria-hidden='true'>&times;</span>"+
+                                                "</button>"+
+                                            "</div>"+
+                                            "<div class='modal-body'>"+
+                                                "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+                                            "</div>"+
+                                            "<div class='modal-footer'>"+
+                                                "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+                                                "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+                                            "</div>"+
+                                        "</div>"+
+                                      "</div>"+
+                                    "</div>"+
+                                "</div>"+
+
+
+                            "</div>";
+						$('.books').append(div);
+
+						isAdmin();
+						publishers.push(value['publisher']);
+						stringarray = value['features'].split(",");
+						$.each(stringarray, function( i, val ) {
+							features.push(val);
+						});
+					});
+					$.unique(features);
+					$.unique(publishers);
+
+					$.each(publishers, function( i, val ) {
+						$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value='+val+'>'+val+'</li>');	
+					});					
+					$.each(features, function( i, val ) {
+						$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'">'+val+'</li>');	
+					});
+					$(".publishers").show();
+					$(".features").show();
+				},
+				error: function() { alert("error loading PHP file");  }
+			});
+		};
+			var searchbooks = function(query) {
+				var count = 0;
+				$.ajax({
+					url: '../server/categories.php',
+					type: 'post',
+					data:{
+						query:query.toLowerCase(),
+						count:count,
+						purpose:"searchbooks"
+					},
+					success: function(result){
+						var data = jQuery.parseJSON(result);
+						var publishers = [];
+						var features = [];
+						var stringarray;
+						//$('.books').empty();
+						$.each( data, function( key, value ) {
+							var url = "./bookdetail.html?category="+value['category_id']+"&subcategory="+value['category_id']+"&book="+value['id'];
+						var deleteClick = "deletebook("+value['id']+")";
+                        var editSaveClick = "updatebook("+value['id']+")";
+                        var editModal = "add_update_book_form"+value['id'];
+                        var editModalPath = "#add_update_book_form"+value['id'];
+                        var editNameValue = "update_book_name"+value['id'];
+                        var editpublisherValue = "update_book_publisher"+value['id'];
+                        var editno_of_copiesValue = "update_book_no_of_copies"+value['id'];
+                        var editdescValue = "update_book_desc"+value['id'];
+                        var editFeatureValue = "update_book_feature"+value['features'];
+                        var editImageValue = "update_book_image"+value['id'];
+
+						var div = "<div class='col-sm-6 col-md-3 category_list' style='padding: 15px;'>"+
+                                "<a href="+url+">"+
+                                    "<div class='categoryFeat' id="+value['id']+" style='background-image: url(../images/"+value['images']+")''>"+
+                                    "</div>"+
+                                "</a>"+
+                                "<a href="+url+">"+
+                                    "<h3 class='categoryFeat-body'>"+value['name']+"</h3>"+
+                                    "<h4 class='categoryFeat-body'>publisher : "+value['publisher']+"</h4>"+
+                                "</a>"+
+
+                                "<div class='admin' style='display:none'>"+
+                                "<a href='#' class='btn btn-primary a-btn-slide-text' data-target="+editModalPath+" data-toggle='modal'>"+
+                                    "<span class='glyphicon glyphicon-edit' aria-hidden='true'></span>"+
+                                    "<span><strong>Edit</strong></span>"+
+                                "</a>"+
+                                "<a href='#' class='btn btn-primary a-btn-slide-text' onclick="+deleteClick+">"+
+                                   "<span class='glyphicon glyphicon-remove' aria-hidden='true'></span>"+
+                                    "<span><strong>Delete</strong></span>"+
+                                "</a>"+
+
+                                "<div class='container'>"+
+                                    "<div class='modal fade' id="+editModal+" tabindex='-1' role='dialog' aria-labelledby='ModalLongTitle' aria-hidden='true'>"+
+                                      "<div class='modal-dialog' role='document'>"+
+                                        "<div class='modal-content'>"+
+                                            "<div class='modal-header'>"+
+                                                "<h5 class='modal-title' id='ModalLongTitle'>Category</h5>"+
+                                                "<button type='button' class='close' data-dismiss='modal' aria-label='Close'>"+
+                                                  "<span aria-hidden='true'>&times;</span>"+
+                                                "</button>"+
+                                            "</div>"+
+                                            "<div class='modal-body'>"+
+                                                "<span>Name : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editNameValue+" type='text' value="+value['name']+"></span><br /><br />"+
+	                                                "<span>publisher : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editpublisherValue+" type='text' value="+value['publisher']+"></span><br /><br />"+
+	                                                "<span>no_of_copies : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editno_of_copiesValue+" type='text' value="+value['no_of_copies']+"></span><br /><br />"+
+	                                                "<span>Desc : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="+editdescValue+" type='text' value="+value['desc']+"></span><br /><br />"+
+	                                                "<span>Image : &nbsp;&nbsp;&nbsp;&nbsp;<input id="+editImageValue+" type='text' value="+value['images']+"></span><br /><br />"+
+	                                                "<span>Features : <input id="+editFeatureValue+" type='text' value="+value['features']+"></span><br /><br />"+
+                                            "</div>"+
+                                            "<div class='modal-footer'>"+
+                                                "<button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>"+
+                                                "<button type='button' class='btn btn-primary update_category_save' onclick="+editSaveClick+">Save changes</button>"+
+                                            "</div>"+
+                                        "</div>"+
+                                      "</div>"+
+                                    "</div>"+
+                                "</div>"+
+
+                            "</div>";
+						$('.books').append(div);
+
+							publishers.push(value['publisher']);
+							stringarray = value['features'].split(",");
+							$.each(stringarray, function( i, val ) {
+								features.push(val);
+							});
+						});
+						$.unique(features);
+						$.unique(publishers);
+
+						$.each(publishers, function( i, val ) {
+							$('#publisherfilters').append('<li><input type="checkbox" name="publishername" class="publisher" value='+val+'>'+val+'</li>');	
+						});					
+						$.each(features, function( i, val ) {
+							$('#featurefilters').append('<li><input type="checkbox" class="feature" value="'+val+'">'+val+'</li>');	
+						});
+						$(".publishers").show();
+						$(".features").show();
+					},
+					error: function() { alert("error loading PHP file");  }
+				});	
+			};
+			
+	</script>
+	<style>
+        .categoryFeat {
+            background-position: center;
+            background-size: cover;
+            display: table;
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+        .categoryFeat-content {
+            color: white;
+            display: table-cell;
+            font-size: 16px;
+            position: relative;
+            text-align: center;
+            vertical-align: middle;
+            z-index: 1;
+        }
+        .categoryFeat-heading {
+            color: inherit;
+        }
+        .categoryFeat-body {
+            font-size: 14px;
+            opacity: .9;
+            filter: alpha(opacity=90);
+        }
+        #popular-categories {
+            padding-bottom: 48px;
+            padding-top: 48px;
+        }
+    </style>
+</head>
+<body>
+	<nav class="navbar navbar-inverse">
+      <div class="container-fluid">
+        
+        <ul class="nav navbar-nav">
+		<li><a class="home_page" href="#">Comet Library</a></li>
+          <li><a class="home_page" href="#">Home</a></li>
+          <li class="dropdown"><a class="dropdown-toggle categories" data-toggle="dropdown" href="#">Categories<span class="caret"></span></a>
+            <ul class="dropdown-menu category">
+            </ul>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="logIn" style='display: none;'><a href="#" data-toggle="modal" data-target="#loginModal"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+          <li class="dropdown loggedIn" style='display: none;'>
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                <span class="glyphicon glyphicon-user"></span> 
+                <strong id="logged-username"></strong>
+                <span class="glyphicon glyphicon-chevron-down"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                    <div class="navbar-wishlist">
+                        <a href="#" class="btn btn-block wishlist">Wishlist</a>
+                    </div>
+					
+                    <div class="navbar-login navbar-login-session">
+                        <a href="#" class="btn btn-danger btn-block logout">Log Out</a>
+                    </div>
+                </li>
+            </ul>
+        </li>
+		<li class="write_review_header1"><a href="https://www.facebook.com/utdallas/"><span class="glyphicon"></span>Facebook</a></li>
+	  <li class="write_review_header1"><a href="https://www.instagram.com/ut_dallas/?hl=en"><span class="glyphicon"></span>Instagram</a></li>
+          
+        </ul>
+         <form class="navbar-form navbar-left search">
+              <div class="input-group">
+                <input type="text" class="form-control search_query" placeholder="Search books" size="50">
+            <div class="input-group-btn">
+              <button class="btn btn-default" type="submit">
+                <i class="glyphicon glyphicon-search"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </nav>
+	<div class="container">
+        <div class="modal fade" id="loginModal" role="dialog">
+            <!--<div class="modal-dialog" style="width:1000px">-->
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div id="loginbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 loginbox"> 
+                        <div class="panel panel-info" > 
+                            <div class="panel-heading panel-title"> 
+                                Sign In 
+                            </div> 
+                            <div class="panel-body panel-pad"> 
+                                <div id="login-alert" class="alert alert-danger col-sm-12 login-alert"></div> 
+                                    <form id="loginform" class="form-horizontal" role="form">  
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon">
+                                                <i class="glyphicon glyphicon-user"></i>
+                                            </span> 
+                                            <input id="login-username" type="text" class="form-control" name="username" value="" placeholder="username or email"> 
+                                        </div> 
+                                        <div class="input-group margT25"> 
+                                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span> 
+                                            <input id="login-password" type="password" class="form-control" name="password" placeholder="password"> 
+                                        </div> 
+                                        <div class="input-group"> 
+                                            <div class="forgot-password"> 
+                                                <a href="#">Forgot password?</a> 
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group margT10">
+                                            <div class="col-sm-12 controls"> 
+                                                <button id="btn-login" type="button" name="signinbutton" class="btn btn-block btn-success">  &nbsp; Login </button>                        
+                                            </div> 
+                                        </div> 
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="no-acc"> 
+                                                    Don't have an account! 
+                                                    <a href="#" onClick="$('#loginbox').hide(); $('#signupbox').show()"> Sign Up Here </a>
+                                                </div> 
+                                            </div> 
+                                        </div> 
+                                    </form>    
+                                </div>    
+                            </div>     
+                        </div>
+                    </div>   
+                    <div id="signupbox" class="mainbox col-md-8 col-md-offset-2 col-sm-8 col-sm-offset-2 signup-box"> 
+                        <div class="panel panel-info"> 
+                            <div class="panel-heading"> 
+                                <div class="panel-title"> Sign Up </div>
+                            </div> 
+                            <div class="panel-body"> 
+                                <form id="signupform" class="form-horizontal" role="form"> 
+                                    <div id="signupalert" class="alert alert-danger login-alert"> 
+                                        <p> Error: </p> 
+                                        <span></span> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="username" class="col-md-3 control-label">Username</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="username" name="username" placeholder="Username"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="firstname" class="col-md-3 control-label">First Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="fname" name="fname" placeholder="First Name"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="lastname" class="col-md-3 control-label">Last Name</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="lname" name="lname" placeholder="Last Name"> 
+                                        </div> 
+                                    </div>                 
+                                    <div class="form-group"> 
+                                        <label for="email" class="col-md-3 control-label">Email</label>
+                                        <div class="col-md-9"> 
+                                            <input type="text" class="form-control" id="email" name="email"  placeholder="Email Address"> 
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group"> 
+                                        <label for="password" class="col-md-3 control-label">Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <label for="repassword" class="col-md-3 control-label">Confirm Password</label> 
+                                        <div class="col-md-9"> 
+                                            <input type="password" id="repassword" class="form-control" name="repassword" placeholder="Confirm Password"> 
+                                        </div> 
+                                    </div>
+                                    <div class="form-group"> 
+                                        <div class="col-md-offset-3 col-md-9"> 
+                                            <button id="btn-signup" type="button" name="signupbutton" class="btn btn-info"> <i class="icon-hand-right"></i> &nbsp; Sign Up </button> 
+                                        </div>
+                                        <div class="form-group"> 
+                                            <div class="col-md-12 control"> 
+                                                <div class="signin"> 
+                                                    Already have an account! 
+                                                    <a id="signinlink" href="#" onclick="$('#signupbox').hide(); $('#loginbox').show()">Sign In</a>
+                                                </div> 
+                                            </div> 
+                                        </div>
+                                    </div>
+                                </form>
+                                <div id="passwordrules">
+                                    <h4>Password must meet the following requirements:</h4>
+                                    <ul>        
+                                        <li id="length" class="invalid">At least <strong>8 characters</strong></li>
+                                        <li id="letter" class="invalid">At least <strong>one letter</strong></li>
+                                        <li id="capital" class="invalid">At least <strong>one capital letter</strong></li>
+                                        <li id="special" class="invalid">At least <strong>one special character</strong></li>
+                                        <li id="number" class="invalid">At least <strong>one number</strong></li>
+                                    </ul>
+                                </div>
+                            </div> 
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>        
+    </div>
+
+
+<div class="navbar navbar-inverse navbar-fixed-left" style="background-color:#FFFFFF;border-top:black">
+  <ul class="nav navbar-nav">
+   <div class="publishers" style="display:none">
+				<b>publishers</b>
+				<ul id="publisherfilters" class="publisherul">
+				</ul>
+			</div>
+			<div class="features" style="display:none">
+				<b>Features</b>		
+				<ul id="featurefilters">
+				</ul>
+			</div>
+  </ul>
+</div>
+
+ <div class="row">
+   <div class="bookList container">
+   		<h2><strong>Browse books</strong></h2>
+   		<button type="button" class="btn btn-primary admin" data-toggle="modal" data-target="#add_update_book_form" style="display: none">
+		  Add book
+		</button>
+		        <div id="popular_categories" class="books admin">
+		        </div>
+		<div class="admin" style="display: none">
+		<!-- Button trigger modal -->
+		
+
+		<!-- Modal -->
+		<div class="container">
+			<div class="modal fade" id="add_update_book_form" tabindex="-1" role="dialog" aria-labelledby="ModalLongTitle" aria-hidden="true">
+			  <div class="modal-dialog" role="document">
+			    <div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="ModalLongTitle">book</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						  <span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<span>Name : <input id="add_update_book_name" type="text"></span><br /><br />
+						<span>publisher : <input id="add_update_book_publisher" type="text"></span><br /><br />
+						<span>no_of_copies : <input id="add_update_book_no_of_copies" type="text"></span><br /><br />
+						<span>Description : <input id="add_update_book_desc" type="text"></span><br /><br />
+						<span>Feature : <input id="add_update_book_feature" type="text"></span><br /><br />
+						<span>Image : <input id="add_update_book_image" type="text"></span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+						<button id="add_update_book_save" type="button" class="btn btn-primary">Save changes</button>
+					</div>
+			    </div>
+			  </div>
+			</div>
+		</div>
+		</div>
+
+
+	</div> 
+	<div class="container">
+	  <ul class="pagination">
+	    <li class="active"><a href="#">1</a></li>
+	    <li><a href="#">2</a></li>
+	  </ul>
+	</div>  
+</div>
+	
+</body>
+</html>
